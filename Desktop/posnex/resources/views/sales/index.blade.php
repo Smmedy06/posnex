@@ -49,6 +49,9 @@
                             <a href="{{ route('sales.print', $sale->id) }}" class="btn btn-sm btn-primary" target="_blank">
                                 <i class="bi bi-printer"></i> Print
                             </a>
+                            <a href="{{ route('sales.return', $sale->id) }}" class="btn btn-sm btn-warning ms-1">
+                                <i class="bi bi-arrow-counterclockwise"></i> Return/Exchange
+                            </a>
                         </td>
                     </tr>
                 @endforeach

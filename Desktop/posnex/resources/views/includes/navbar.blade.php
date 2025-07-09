@@ -41,6 +41,21 @@
                                 @endif
                                 <li><a class="dropdown-item" href="{{ route('company.settings.edit') }}">Company Details</a></li>
                                 <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Update Profile</a></li>
+                                @if (in_array(auth()->user()->role, ['admin', 'superadmin']))
+                                    <li><a class="dropdown-item" href="{{ route('admin.backups') }}">Manage Backups</a></li>
+                                    <li>
+                                        <form action="{{ route('admin.backup') }}" method="POST" id="profile-backup-form">
+                                            @csrf
+                                            <button type="submit" class="dropdown-item">Backup Now</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form action="{{ route('admin.restore') }}" method="POST" id="profile-restore-form">
+                                            @csrf
+                                            <button type="submit" class="dropdown-item">Restore (Coming Soon)</button>
+                                        </form>
+                                    </li>
+                                @endif
                                 <li>
                                     <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                         @csrf

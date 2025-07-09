@@ -25,11 +25,13 @@ class User extends Authenticatable
         'role',
         'status',
         'inactive_at',
+        'permissions',
     ];
 
     protected $casts = [
-    'inactive_at' => 'datetime',
-];
+        'inactive_at' => 'datetime',
+        'permissions' => 'array',
+    ];
 
 public static function deactivateExpiredUsers()
 {

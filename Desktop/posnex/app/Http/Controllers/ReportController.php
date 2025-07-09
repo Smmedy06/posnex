@@ -158,6 +158,14 @@ class ReportController extends Controller
             ->whereBetween('created_at', [$from, $to])
             ->sum('amount');
 
+        // Returns
+        $totalReturns = \App\Models\ReturnTransaction::whereHas('sale', function($q) use ($companyId, $from, $to) {
+            $q->where('company_id', $companyId)
+              ->whereBetween('created_at', [$from, $to]);
+        })->sum(DB::raw('amount * quantity'));
+
+        $netSale = $totalSale - $totalReturns;
+
         return view('report.finance', compact(
             'from',
             'to',
@@ -165,7 +173,51 @@ class ReportController extends Controller
             'externalPurchase',
             'totalSale',
             'externalSale',
-            'totalExpense'
+            'totalExpense',
+            'totalReturns',
+            'netSale'
         ));
+    }
+
+    public function dailySales(Request $request)
+    {
+        $companyId = Auth::user()->company_id;
+        $date = $request->input('date', now()->toDateString());
+
+        $sales = \App\Models\Sale::with('inventorySales.item')
+            ->where('company_id', $companyId)
+            ->whereDate('created_at', $date)
+            ->get();
+
+        $summary = [];
+        $totalSales = 0;
+        $totalProfit = 0;
+
+        foreach ($sales as $sale) {
+            foreach ($sale->inventorySales as $detail) {
+                $item = $detail->item;
+                $qty = $detail->quantity;
+                $amount = $detail->amount;
+                $total = $amount * $qty;
+                $sourcing = $item->sourcing_price ?? 0;
+                $profit = ($amount - $sourcing) * $qty;
+
+                if (!isset($summary[$item->id])) {
+                    $summary[$item->id] = [
+                        'name' => $item->item_name,
+                        'qty' => 0,
+                        'total' => 0,
+                        'profit' => 0,
+                    ];
+                }
+                $summary[$item->id]['qty'] += $qty;
+                $summary[$item->id]['total'] += $total;
+                $summary[$item->id]['profit'] += $profit;
+                $totalSales += $total;
+                $totalProfit += $profit;
+            }
+        }
+
+        return view('reports.daily-sales', compact('summary', 'totalSales', 'totalProfit', 'date'));
     }
 }

@@ -17,6 +17,7 @@ class Customer extends Model
         'email',
         'cnic',
         'address',
+        'city',
         'company_id',
     ];
 
@@ -26,5 +27,15 @@ class Customer extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
     }
 }

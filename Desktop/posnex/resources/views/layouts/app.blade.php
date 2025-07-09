@@ -40,6 +40,13 @@
         <div class="flex-grow-1 p-3" style="margin-left: 250px;">
             @include('includes.navbar')
             <main class="mt-2">
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+
                 {{-- @if (session('success'))
                     <p style="color:green;">{{ session('success') }}</p>
                 @endif

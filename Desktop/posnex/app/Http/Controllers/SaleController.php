@@ -24,13 +24,10 @@ class SaleController extends Controller
             ->where('status', 'active')
             ->where('unit', '>', 0)
             ->get();
+        // Only fetch wholesale customers
         $customers = Customer::where('company_id', $company->id)
-            ->where(function ($query) use ($company) {
-                $query->where('type', $company->type);
-                if ($company->type === 'both') {
-                    $query->orWhere('type', 'retail')->orWhere('type', 'wholesale');
-                }
-            })->get();
+            ->where('type', 'wholesale')
+            ->get();
         return view('sales.create', compact('inventories', 'company', 'customers'));
     }
 
@@ -40,8 +37,7 @@ class SaleController extends Controller
         $user = Auth::user();
         $company = $user->company;
 
-        $saleType = $company->type !== 'both' ? $company->type : $request->sale_type;
-
+        // Accept either wholesale_customer_id or retail_customer_name
         $request->validate([
             'items' => 'required|array',
             'items.*.inventory_id' => 'required|exists:inventory,id',
@@ -49,14 +45,16 @@ class SaleController extends Controller
             'sale_type' => 'required_if:company.type,both|in:retail,wholesale',
             'payment_method' => 'required|in:cash,card,online',
             'discount' => 'nullable|numeric|min:0',
-            'customer_id' => [
-                'required',
-                Rule::exists('customers', 'id')->where(function ($query) use ($company, $saleType) {
-                    $query->where('company_id', $company->id)
-                        ->where('type', $saleType);
-                }),
-            ],
+            // Custom validation: one of the two must be present, not both
+            'wholesale_customer_id' => 'nullable|exists:customers,id',
+            'retail_customer_name' => 'nullable|string|max:255',
         ]);
+        if (!$request->wholesale_customer_id && !$request->retail_customer_name) {
+            return back()->withErrors(['Please select a wholesale customer or enter a retail customer name.'])->withInput();
+        }
+        if ($request->wholesale_customer_id && $request->retail_customer_name) {
+            return back()->withErrors(['Please fill only one: either select a wholesale customer or enter a retail customer name, not both.'])->withInput();
+        }
 
         $discount = $request->discount ?? 0;
 
@@ -66,14 +64,14 @@ class SaleController extends Controller
         foreach ($request->items as $item) {
             $inventory = Inventory::findOrFail($item['inventory_id']);
 
-            $amount = $saleType === 'retail' ? $inventory->retail_amount : $inventory->wholesale_amount;
+            $amount = $request->sale_type === 'retail' ? $inventory->retail_amount : $inventory->wholesale_amount;
             $totalAmount = $amount * $item['quantity'];
 
             $inventorySales[] = [
                 'inventory' => $inventory,
                 'item_id' => $inventory->id,
                 'quantity' => $item['quantity'],
-                'sale_type' => $saleType,
+                'sale_type' => $request->sale_type,
                 'amount' => $amount,
                 'total_amount' => $totalAmount
             ];
@@ -98,7 +96,7 @@ class SaleController extends Controller
 
         $saleCode = "{$prefix}{$companyIdPadded}-{$saleNumber}";
 
-        $sale = Sale::create([
+        $saleData = [
             'sale_code' => $saleCode,
             'created_by' => $user->name,
             'discount' => $discount,
@@ -108,7 +106,31 @@ class SaleController extends Controller
             'tax_amount' => $tax_amount,
             'total_amount' => $total_amount,
             'company_id' => $company->id,
-            'customer_id' => $request->customer_id,
+            'sale_type' => $request->sale_type,
+        ];
+        if ($request->wholesale_customer_id) {
+            $saleData['customer_id'] = $request->wholesale_customer_id;
+            $saleData['customer_name'] = null;
+        } else {
+            $saleData['customer_id'] = null;
+            $saleData['customer_name'] = $request->retail_customer_name;
+        }
+        // Save amount_received and change_return if present
+        if ($request->has('amount_received')) {
+            $saleData['amount_received'] = $request->amount_received;
+        }
+        if ($request->has('change_return')) {
+            $saleData['change_return'] = $request->change_return;
+        }
+
+        $sale = Sale::create($saleData);
+
+        \App\Models\ActivityLog::create([
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'user_role' => $user->role,
+            'action' => 'Created Sale',
+            'details' => 'Sale Code: ' . $sale->sale_code . ', Customer: ' . ($sale->customer->name ?? $sale->customer_name) . ', Amount: ' . $sale->total_amount,
         ]);
 
         foreach ($inventorySales as $data) {
@@ -158,5 +180,54 @@ class SaleController extends Controller
             ->firstOrFail();
 
         return view('sales.print', compact('sale'));
+    }
+
+    public function returnForm($id)
+    {
+        $sale = Sale::with('inventorySales.item')->where('id', $id)->firstOrFail();
+        return view('sales.return', compact('sale'));
+    }
+
+    public function processReturn(Request $request, $id)
+    {
+        $sale = Sale::with('inventorySales')->findOrFail($id);
+        $user = auth()->user();
+        $returns = $request->input('returns', []);
+        $anyReturn = false;
+        foreach ($returns as $detailId => $data) {
+            $qty = intval($data['quantity'] ?? 0);
+            if ($qty > 0) {
+                $anyReturn = true;
+                // Update inventory (add returned qty)
+                $itemId = $data['item_id'];
+                $amount = $data['amount'];
+                $reason = $data['reason'] ?? null;
+                $inventory = \App\Models\Inventory::find($itemId);
+                if ($inventory) {
+                    $inventory->increment('unit', $qty);
+                }
+                // Record return transaction
+                \App\Models\ReturnTransaction::create([
+                    'sale_id' => $sale->id,
+                    'item_id' => $itemId,
+                    'quantity' => $qty,
+                    'amount' => $amount,
+                    'reason' => $reason,
+                    'processed_by' => $user->name,
+                ]);
+            }
+        }
+        if ($anyReturn) {
+            \App\Models\ActivityLog::create([
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'user_role' => $user->role,
+                'action' => 'Processed Return',
+                'details' => 'Sale ID: ' . $sale->id . ', Customer: ' . ($sale->customer->name ?? $sale->customer_name),
+            ]);
+            return redirect()->route('sales.index')->with('success', 'Return processed successfully.');
+        } else {
+            return back()->withErrors(['Please enter a return quantity for at least one item.']);
+        }
     }
 }

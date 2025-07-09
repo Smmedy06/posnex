@@ -32,22 +32,25 @@
                                         <option value="retail">Retail</option>
                                         <option value="wholesale">Wholesale</option>
                                     </select>
+                                    <input type="hidden" name="sale_type" id="sale_type_hidden" value="retail">
                                 </div>
                             @else
                                 <input type="hidden" name="sale_type" id="sale_type" value="{{ $company->type }}">
                             @endif
 
-                            {{-- Customer Selection --}}
+                            {{-- Customer Section --}}
                             <div class="mb-3">
-                                <label for="customer_name" class="form-label">Customer <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" id="customer_name" class="form-control"
-                                        placeholder="Select customer" readonly data-bs-toggle="modal"
-                                        data-bs-target="#customerModal" required>
-                                    <input type="hidden" name="customer_id" id="customer_id" required>
-                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                        data-bs-target="#customerModal">Select</button>
-                                </div>
+                                <label for="wholesale_customer_id" class="form-label">Wholesale Customer</label>
+                                <select name="wholesale_customer_id" id="wholesale_customer_id" class="form-select">
+                                    <option value="">Select wholesale customer</option>
+                                    @foreach ($customers as $customer)
+                                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="retail_customer_name" class="form-label">Customer Name (for walk-in/retail)</label>
+                                <input type="text" name="retail_customer_name" id="retail_customer_name" class="form-control" placeholder="Enter customer name">
                             </div>
 
                             {{-- Item Selection --}}
@@ -111,6 +114,16 @@
                                             readonly value="0.00">
                                     </div>
 
+                                    <div class="mb-3">
+                                        <label for="amount_received" class="form-label">Amount Received</label>
+                                        <input type="number" id="amount_received" name="amount_received" class="form-control" min="0" step="0.01" placeholder="Enter amount received">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="change_return" class="form-label">Change to Return</label>
+                                        <input type="text" id="change_return" name="change_return" class="form-control" readonly value="0.00">
+                                    </div>
+
                                     <div class="d-flex justify-content-between mt-4">
                                         <button type="submit" class="btn btn-primary w-50">Submit Sale</button>
                                         <a href="{{ route('sales.index') }}"
@@ -121,34 +134,6 @@
                         </div>
                     </div>
                 </form>
-
-                {{-- Customer Modal --}}
-                <div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content shadow-sm">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Select Customer</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <input type="text" id="customer-search" class="form-control mb-3"
-                                    placeholder="Search customers...">
-                                <div class="list-group" id="customer-list" style="max-height: 300px; overflow-y: auto;">
-                                    @foreach ($customers as $customer)
-                                        <button type="button" class="list-group-item list-group-item-action"
-                                            data-id="{{ $customer->id }}" data-name="{{ $customer->name }}"
-                                            data-type="{{ $customer->type }}">
-                                            <strong>{{ $customer->name }}</strong>
-                                            <div class="small text-muted">Type: {{ ucfirst($customer->type) }}</div>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 {{-- Item Modal --}}
                 <div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalLabel"
@@ -204,8 +189,13 @@
     </div>
 @endsection
 
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+@endpush
 
 @push('scripts')
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const taxRates = {
@@ -262,6 +252,15 @@
 
                 const totalAmount = taxableAmount + taxAmount;
                 document.getElementById('total_amount').value = totalAmount.toFixed(2);
+
+                // Calculate change
+                const amountReceivedInput = document.getElementById('amount_received');
+                const changeReturnInput = document.getElementById('change_return');
+                if (amountReceivedInput && changeReturnInput) {
+                    const amountReceived = parseFloat(amountReceivedInput.value) || 0;
+                    const change = amountReceived - totalAmount;
+                    changeReturnInput.value = change >= 0 ? change.toFixed(2) : '0.00';
+                }
             }
 
             function addItemToSelected(item) {
@@ -274,6 +273,7 @@
                 const itemName = item.dataset.name;
                 const retailPrice = item.dataset.retail;
                 const wholesalePrice = item.dataset.wholesale;
+                const availableStock = parseInt(item.dataset.unit);
 
                 const saleType = getCurrentSaleType();
                 const price = (saleType === 'retail') ? retailPrice : wholesalePrice;
@@ -288,9 +288,10 @@
                 </div>
                 <div class="col-md-2">
                     <input type="number" name="items[${itemId}][quantity]"
-                        class="form-control quantity-input" min="0" value="1" placeholder="Quantity"
+                        class="form-control quantity-input" min="1" max="${availableStock}" value="1" placeholder="Quantity"
                         data-retail="${retailPrice}"
-                        data-wholesale="${wholesalePrice}">
+                        data-wholesale="${wholesalePrice}"
+                        data-stock="${availableStock}">
                 </div>
                 <div class="col-md-3">
                     <input type="text" class="form-control item-total" value="${parseFloat(price).toFixed(2)}" readonly>
@@ -304,7 +305,18 @@
 
                 calculateTotals();
 
-                row.querySelector('.quantity-input').addEventListener('input', calculateTotals);
+                const qtyInput = row.querySelector('.quantity-input');
+                qtyInput.addEventListener('input', function() {
+                    const max = parseInt(this.getAttribute('max'));
+                    let val = parseInt(this.value);
+                    if (val > max) {
+                        alert('Cannot sell more than available stock (' + max + ').');
+                        this.value = max;
+                    } else if (val < 1) {
+                        this.value = 1;
+                    }
+                    calculateTotals();
+                });
                 row.querySelector('.remove-item').addEventListener('click', function() {
                     document.getElementById(`item-row-${itemId}`).remove();
                     calculateTotals();
@@ -357,46 +369,99 @@
                 discountInput.addEventListener('input', calculateTotals);
             }
 
-            // Customer section
-            const customerList = document.getElementById('customer-list');
-            const customerSearch = document.getElementById('customer-search');
-            const customerNameInput = document.getElementById('customer_name');
-            const customerIdInput = document.getElementById('customer_id');
+            // Amount received
+            const amountReceivedInput = document.getElementById('amount_received');
+            if (amountReceivedInput) {
+                amountReceivedInput.addEventListener('input', calculateTotals);
+            }
 
-            if (customerList) {
-                customerList.addEventListener('click', function(e) {
-                    const button = e.target.closest('button[data-id]');
-                    if (!button) return;
-
-                    const selectedType = getCurrentSaleType();
-                    if (button.dataset.type !== selectedType) {
-                        alert(
-                            `Customer type (${button.dataset.type}) must match selected sale type (${selectedType}).`
-                        );
-                        return;
+            // Customer validation: Only one required
+            const saleForm = document.getElementById('sale-form');
+            if (saleForm) {
+                saleForm.addEventListener('submit', function(e) {
+                    const wholesaleId = document.getElementById('wholesale_customer_id').value;
+                    const retailName = document.getElementById('retail_customer_name').value.trim();
+                    if (!wholesaleId && !retailName) {
+                        alert('Please select a wholesale customer or enter a retail customer name.');
+                        e.preventDefault();
+                        return false;
                     }
-
-                    customerNameInput.value = button.dataset.name;
-                    customerIdInput.value = button.dataset.id;
-
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('customerModal'));
-                    modal.hide();
+                    if (wholesaleId && retailName) {
+                        alert('Please fill only one: either select a wholesale customer or enter a retail customer name, not both.');
+                        e.preventDefault();
+                        return false;
+                    }
+                    // Ensure change_return is up to date before submit
+                    const amountReceivedInput = document.getElementById('amount_received');
+                    const changeReturnInput = document.getElementById('change_return');
+                    if (amountReceivedInput && changeReturnInput) {
+                        const totalAmount = parseFloat(document.getElementById('total_amount').value) || 0;
+                        const amountReceived = parseFloat(amountReceivedInput.value) || 0;
+                        const change = amountReceived - totalAmount;
+                        changeReturnInput.value = change >= 0 ? change.toFixed(2) : '0.00';
+                    }
                 });
             }
 
-            if (customerSearch) {
-                customerSearch.addEventListener('input', function() {
-                    const term = this.value.toLowerCase().trim();
-                    document.querySelectorAll('#customer-list button').forEach(btn => {
-                        const name = (btn.dataset.name || '').toLowerCase();
-                        btn.style.display = name.includes(term) ? 'block' : 'none';
-                    });
-                });
+            // Select2 for wholesale customer
+            $("#wholesale_customer_id").select2({
+                placeholder: 'Select wholesale customer',
+                allowClear: true,
+                width: '100%'
+            });
+
+            const wholesaleCustomerSelect = document.getElementById('wholesale_customer_id');
+            const retailCustomerInput = document.getElementById('retail_customer_name');
+
+            function updateSaleTypeAndLock() {
+                const wholesaleId = wholesaleCustomerSelect.value;
+                const retailName = retailCustomerInput.value.trim();
+                if (wholesaleId) {
+                    if (saleTypeSelect) {
+                        saleTypeSelect.value = 'wholesale';
+                        saleTypeSelect.style.display = 'none';
+                    }
+                    document.getElementById('sale_type_hidden').value = 'wholesale';
+                } else if (retailName) {
+                    if (saleTypeSelect) {
+                        saleTypeSelect.value = 'retail';
+                        saleTypeSelect.style.display = 'none';
+                    }
+                    document.getElementById('sale_type_hidden').value = 'retail';
+                } else {
+                    if (saleTypeSelect) {
+                        saleTypeSelect.style.display = '';
+                    }
+                    document.getElementById('sale_type_hidden').value = saleTypeSelect.value;
+                }
+                calculateTotals();
             }
 
-            // Initial totals
-            updateTaxPercentage();
-            calculateTotals();
+            if (wholesaleCustomerSelect) {
+                wholesaleCustomerSelect.addEventListener('change', function() {
+                    if (this.value) {
+                        retailCustomerInput.value = '';
+                    }
+                    updateSaleTypeAndLock();
+                });
+            }
+            if (retailCustomerInput) {
+                retailCustomerInput.addEventListener('input', function() {
+                    if (this.value.trim()) {
+                        if (wholesaleCustomerSelect) wholesaleCustomerSelect.value = '';
+                        $(wholesaleCustomerSelect).trigger('change');
+                    }
+                    updateSaleTypeAndLock();
+                });
+            }
+            if (saleTypeSelect) {
+                saleTypeSelect.addEventListener('change', function() {
+                    document.getElementById('sale_type_hidden').value = saleTypeSelect.value;
+                    calculateTotals();
+                });
+            }
+            // On page load
+            updateSaleTypeAndLock();
         });
     </script>
 @endpush

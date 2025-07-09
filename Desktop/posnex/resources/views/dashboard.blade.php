@@ -2,6 +2,7 @@
 
 @section('content')
     <div class="container mt-5">
+        {{-- Removed backup/restore buttons from dashboard --}}
         <div class="mb-5">
             <h2 class="fw-bold text-dark">📊 {{ config('app.name', 'Laravel') }} Dashboard</h2>
             <p class="text-muted">Welcome back, <strong>{{ auth()->user()->name }}</strong>! Here’s a quick overview of your

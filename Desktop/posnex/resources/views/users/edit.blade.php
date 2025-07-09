@@ -43,6 +43,30 @@
             </select>
         </div>
 
+        <div class="mb-3">
+            <label>Permissions</label>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="permissions[]" value="sales" id="perm_sales" {{ is_array(old('permissions', $user->permissions)) && in_array('sales', old('permissions', $user->permissions)) ? 'checked' : '' }}>
+                <label class="form-check-label" for="perm_sales">Access Sales</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="permissions[]" value="inventory" id="perm_inventory" {{ is_array(old('permissions', $user->permissions)) && in_array('inventory', old('permissions', $user->permissions)) ? 'checked' : '' }}>
+                <label class="form-check-label" for="perm_inventory">Access Inventory</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="permissions[]" value="reports" id="perm_reports" {{ is_array(old('permissions', $user->permissions)) && in_array('reports', old('permissions', $user->permissions)) ? 'checked' : '' }}>
+                <label class="form-check-label" for="perm_reports">Access Reports</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="permissions[]" value="employees" id="perm_employees" {{ is_array(old('permissions', $user->permissions)) && in_array('employees', old('permissions', $user->permissions)) ? 'checked' : '' }}>
+                <label class="form-check-label" for="perm_employees">Access Employees</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="permissions[]" value="expenses" id="perm_expenses" {{ is_array(old('permissions', $user->permissions)) && in_array('expenses', old('permissions', $user->permissions)) ? 'checked' : '' }}>
+                <label class="form-check-label" for="perm_expenses">Access Expenses</label>
+            </div>
+        </div>
+
         <button class="btn btn-primary">Update</button>
     </form>
 </div>

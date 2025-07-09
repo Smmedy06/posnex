@@ -20,6 +20,10 @@ class Sale extends Model
         'discount',
         'company_id',
         'customer_id',
+        'customer_name', // For retail customer name
+        'sale_type',
+        'amount_received',
+        'change_return',
     ];
 
     public function inventorySales()
@@ -34,5 +38,10 @@ class Sale extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function returns()
+    {
+        return $this->hasMany(ReturnTransaction::class);
     }
 }

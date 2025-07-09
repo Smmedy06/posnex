@@ -21,7 +21,7 @@ use App\Http\Controllers\ProfileController;
 
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -107,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    Route::get('/customers/history/{customer}', [App\Http\Controllers\CustomerController::class, 'history'])->name('customers.history');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -115,6 +116,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales/create', [SaleController::class, 'create'])->name('sales.create');
     Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
     Route::get('/sales/print/{id}', [SaleController::class, 'print'])->name('sales.print');
+    Route::get('/sales/return/{sale}', [App\Http\Controllers\SaleController::class, 'returnForm'])->name('sales.return');
+    Route::post('/sales/return/{sale}', [App\Http\Controllers\SaleController::class, 'processReturn'])->name('sales.processReturn');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -137,6 +140,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/external-purchases', [ReportController::class, 'externalPurchases'])->name('reports.externalPurchases');
     Route::get('/reports/finance', [ReportController::class, 'financeReport'])->name('reports.finance');
     Route::get('/reports/purchase', [ReportController::class, 'purchase'])->name('reports.purchase');
+    Route::get('/reports/daily-sales', [App\Http\Controllers\ReportController::class, 'dailySales'])->name('reports.dailySales');
 });
 
 
@@ -149,5 +153,30 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/company/settings', [CompanySettingsController::class, 'edit'])->name('company.settings.edit');
     Route::post('/company/settings', [CompanySettingsController::class, 'update'])->name('company.settings.update');
+});
+
+Route::post('/payments/store', [App\Http\Controllers\PaymentController::class, 'store'])->name('payments.store');
+
+Route::middleware(['auth'])->group(function () {
+    // Custom employee salary payment routes FIRST
+    Route::get('employees/pay-salaries', [App\Http\Controllers\EmployeeController::class, 'paySalariesForm'])->name('employees.paySalaries');
+    Route::post('employees/pay-salaries', [App\Http\Controllers\EmployeeController::class, 'paySalariesProcess'])->name('employees.paySalaries.process');
+    // Then the resource route
+    Route::resource('employees', App\Http\Controllers\EmployeeController::class);
+    Route::resource('salaries', App\Http\Controllers\SalaryController::class);
+    Route::get('salaries/bulk', [App\Http\Controllers\SalaryController::class, 'bulkForm'])->name('salaries.bulk');
+    Route::post('salaries/bulk-pay', [App\Http\Controllers\SalaryController::class, 'bulkPay'])->name('salaries.bulkPay');
+    Route::get('activity-logs', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/returns', [App\Http\Controllers\ReturnTransactionController::class, 'index'])->name('returns.index');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/backups', [App\Http\Controllers\BackupController::class, 'listBackups'])->name('admin.backups');
+    Route::post('/admin/backup', [App\Http\Controllers\BackupController::class, 'runBackup'])->name('admin.backup');
+    Route::post('/admin/restore', [App\Http\Controllers\BackupController::class, 'runRestore'])->name('admin.restore');
+    Route::get('/admin/backup/download/{file}', [App\Http\Controllers\BackupController::class, 'downloadBackup'])->name('admin.backup.download');
 });
 

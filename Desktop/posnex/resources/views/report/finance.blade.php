@@ -48,6 +48,14 @@
                     <td>{{ number_format($totalSale, 2) }}</td>
                 </tr>
                 <tr>
+                    <td>Returns</td>
+                    <td class="text-danger">-{{ number_format($totalReturns, 2) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Net Sales</strong></td>
+                    <td><strong>{{ number_format($netSale, 2) }}</strong></td>
+                </tr>
+                <tr>
                     <td>External Sales</td>
                     <td>{{ number_format($externalSale, 2) }}</td>
                 </tr>
@@ -71,7 +79,7 @@
                 <tr class="table-dark text-white fw-bold">
                     <td>Net Income</td>
                     <td>
-                        {{ number_format(($totalSale + $externalSale) - ($totalPurchase + $externalPurchase + $totalExpense), 2) }}
+                        {{ number_format(($netSale + $externalSale) - ($totalPurchase + $externalPurchase + $totalExpense), 2) }}
                     </td>
                 </tr>
             </tbody>

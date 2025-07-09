@@ -23,7 +23,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        //
+        $companies = Company::all();
+        return view('users.create', compact('companies'));
     }
 
     /**
@@ -31,7 +32,23 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:6',
+            'role' => 'required|string',
+            'company_id' => 'nullable|exists:companies,id',
+        ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role' => $request->role,
+            'company_id' => $request->company_id,
+            'status' => 'active',
+            'permissions' => $request->permissions ?? [],
+        ]);
+        return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
     /**
@@ -60,11 +77,12 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'role' => 'nullable|string',
-            'status' => 'required|boolean',
+            'status' => 'required',
             'company_id' => 'nullable|exists:companies,id',
         ]);
 
         $user->fill($request->all());
+        $user->permissions = $request->permissions ?? [];
 
         if (in_array($request->role, ['admin', 'employee']) && !$user->inactive_at) {
             $user->inactive_at = now()->addDays(180);

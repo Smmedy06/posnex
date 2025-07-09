@@ -17,10 +17,7 @@
         <div class="mb-3">
             <label for="type" class="form-label">Customer Type</label>
             <select name="type" id="type" class="form-select" required>
-                <option value="">Select Type</option>
-                <option value="retail" {{ old('type', $customer->type) == 'retail' ? 'selected' : '' }}>Retail</option>
-                <option value="wholesale" {{ old('type', $customer->type) == 'wholesale' ? 'selected' : '' }}>Wholesale</option>
-                <option value="both" {{ old('type', $customer->type) == 'both' ? 'selected' : '' }}>Both</option>
+                <option value="wholesale" selected>Wholesale</option>
             </select>
             @error('type') <small class="text-danger">{{ $message }}</small> @enderror
         </div>
@@ -41,6 +38,12 @@
             <label for="cnic" class="form-label">CNIC (00000-0000000-0)</label>
             <input type="text" class="form-control" id="cnic" name="cnic" value="{{ old('cnic', $customer->cnic) }}">
             @error('cnic') <small class="text-danger">{{ $message }}</small> @enderror
+        </div>
+
+        <div class="mb-3">
+            <label for="city" class="form-label">City</label>
+            <input type="text" class="form-control" id="city" name="city" value="{{ old('city', $customer->city ?? '') }}">
+            @error('city') <small class="text-danger">{{ $message }}</small> @enderror
         </div>
 
         <div class="mb-3">

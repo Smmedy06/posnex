@@ -112,7 +112,7 @@ class PurchaseController extends Controller
         $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'purchase_date' => 'required|date',
-            'items.*.inventory_id' => 'required|exists:inventoriy,id',
+            'items.*.inventory_id' => 'required|exists:inventory,id',
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.purchase_amount' => 'required|numeric|min:0',
         ]);

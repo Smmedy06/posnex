@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('payment_method'); // E.g., Cash, Card
             $table->decimal('discount', 12, 2)->default(0);
             $table->unsignedBigInteger('company_id');
+            $table->string('customer_name')->nullable(); // For retail customer name
             $table->timestamps();
 
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
