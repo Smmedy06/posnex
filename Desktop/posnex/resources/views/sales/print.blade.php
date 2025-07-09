@@ -68,7 +68,7 @@
     <p><strong>Sale ID</strong> # {{ $sale->sale_code }}<br>
         <strong>Date:</strong> {{ $sale->created_at->format('d-m-Y h:i A') }}<br>
         <strong>Created By:</strong> {{ $sale->created_by }} <br>
-        <strong>Customer:</strong> {{ $sale->customer->name ?? 'N/A' }}
+        <strong>Customer:</strong> {{ $sale->customer->name ?? $sale->customer_name ?? 'N/A' }}
     </p>
 
 
@@ -93,19 +93,53 @@
         </tbody>
     </table>
 
+    @if($sale->returns && $sale->returns->count())
+        <div class="mt-3">
+            <h6>Returned Items</h6>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Amount</th>
+                        <th>Reason</th>
+                        <th>Processed By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($sale->returns as $ret)
+                        <tr>
+                            <td>{{ $ret->item->item_name ?? '-' }}</td>
+                            <td>{{ $ret->quantity }}</td>
+                            <td>{{ number_format($ret->amount, 2) }}</td>
+                            <td>{{ $ret->reason }}</td>
+                            <td>{{ $ret->processed_by }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
     <div class="summary">
         <p><strong>Subtotal:</strong> {{ number_format($sale->subtotal, 2) }}</p>
         <p><strong>Tax ({{ $sale->tax_percentage }}%):</strong> {{ number_format($sale->tax_amount, 2) }}</p>
         <p><strong>Discount:</strong> {{ number_format($sale->discount, 2) }}</p>
         <h5><strong>Total:</strong> {{ number_format($sale->total_amount, 2) }}</h5>
         <p><strong>Payment Method:</strong> {{ ucfirst($sale->payment_method) }}</p>
+        @if(isset($sale->amount_received))
+            <p><strong>Amount Received:</strong> {{ number_format($sale->amount_received, 2) }}</p>
+        @endif
+        @if(isset($sale->change_return))
+            <p><strong>Change Returned:</strong> {{ number_format($sale->change_return, 2) }}</p>
+        @endif
     </div>
 
     <div class="footer">
         <p>Thank you for your purchase!</p>
-        <p>Developed by <strong>NexAura Softwares</strong><br>
-            <small>www.nexaurasoftwares.com | nexaurasoftwares@gmail.com</small><br>
-            <small>(+92) 319-7131158</small>
+        <p>Developed by <strong>DevZyte</strong><br>
+            <small>www.devzyte.com | info@devzyte.com</small><br>
+            <small>(+92) 346-7911195</small>
         </p>
     </div>
 

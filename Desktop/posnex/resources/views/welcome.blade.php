@@ -93,23 +93,23 @@
 
     </main>
     <footer>
-<!-- Developer Company Info Section -->
-  <section class="bg-light p-3 py-4 mt-5 rounded shadow-sm">
-    <div class="row align-items-center">
-      <div class="col-md-8">
-        <h5 class="mb-2">Developed by <a href="https://nexaurasoftwares.com" target="_blank" rel="noopener" class="text-decoration-none">NexAura Softwares</a></h5>
-        <p class="mb-1">
-          NexAura Softwares provides expert services in <strong>Website Development, Digital Marketing, SEO/SMM</strong>, and <strong>Custom Websites & Web Applications</strong>.
-        </p>
-        <p class="mb-0">
-          Currently running project: <a href="https://ems.nexaurasoftwares.com" target="_blank" rel="noopener">Education Management System</a> — a comprehensive School Management Web Application.
-        </p>
+    <!-- Developer Company Info Section -->
+    <section class="bg-light p-3 py-4 mt-5 rounded shadow-sm">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h5 class="mb-2">Developed by <a href="https://devzyte.com" target="_blank" rel="noopener" class="text-decoration-none">DevZyte</a></h5>
+          <p class="mb-1">
+            DevZyte provides expert services in <strong>Website Development, Digital Marketing, SEO/SMM</strong>, and <strong>Custom Websites & Web Applications</strong>.
+          </p>
+          <p class="mb-0">
+            Contact: <a href="mailto:info@devzyte.com">info@devzyte.com</a> | (+92) 346-7911195
+          </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <a href="https://devzyte.com" target="_blank" rel="noopener" class="btn btn-outline-primary">Visit DevZyte</a>
+        </div>
       </div>
-      <div class="col-md-4 text-md-end mt-3 mt-md-0">
-        <a href="https://nexaurasoftwares.com" target="_blank" rel="noopener" class="btn btn-outline-primary">Visit NexAura Softwares</a>
-      </div>
-    </div>
-  </section>
+    </section>
     </footer>
     <!-- Bootstrap JavaScript Libraries -->
     <script

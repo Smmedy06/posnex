@@ -101,9 +101,9 @@
 
     <div class="footer">
         <p>Thank you for your purchase!</p>
-        <p>Developed by <strong>NexAura Softwares</strong><br>
-            <small>www.nexaurasoftwares.com | nexaurasoftwares@gmail.com</small><br>
-            <small>(+92) 319-7131158</small>
+        <p>Developed by <strong>DevZyte</strong><br>
+            <small>www.devzyte.com | info@devzyte.com</small><br>
+            <small>(+92) 346-7911195</small>
         </p>
     </div>
 
